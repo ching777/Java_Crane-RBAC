@@ -1,0 +1,262 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.crane.answer.works.dao.WorksDao" >
+    <resultMap id="BaseResultMap" type="com.crane.answer.works.model.Works" >
+        <id column="works_id" property="works_id" jdbcType="VARCHAR" />
+        <result column="works_student_id" property="works_student_id" jdbcType="VARCHAR" />
+        <result column="works_answer_id" property="works_answer_id" jdbcType="VARCHAR" />
+        <result column="works_label" property="works_label" jdbcType="VARCHAR" />
+        <result column="works_code_update" property="works_code_update" jdbcType="VARCHAR" />
+        <result column="works_js_data" property="works_js_data" jdbcType="VARCHAR" />
+        <result column="works_video" property="works_video" jdbcType="VARCHAR" />
+        <result column="works_states" property="works_states" jdbcType="VARCHAR" />
+    </resultMap>
+    <sql id="answer_works_manage_columns" >
+        works_id, works_student_id, works_answer_id, works_label, works_code_update, works_js_data, 
+        works_video, works_states ,student_name ,answer_question
+        
+    </sql>
+    
+    
+    
+    
+    <select id="getWorkList" resultMap="BaseResultMap" parameterType="com.crane.commons.model.Pager" >
+        SELECT
+            answer_works_manage.works_id,
+            answer_works_manage.works_student_id,
+            answer_works_manage.works_answer_id,
+            answer_works_manage.works_label,
+            answer_works_manage.works_code_update,
+            answer_works_manage.works_js_data,
+            answer_works_manage.works_video,
+            answer_works_manage.works_states,
+            student_manage.student_name,
+            answer_time_manage.answer_question
+            FROM
+            answer_works_manage
+            LEFT JOIN student_manage ON answer_works_manage.works_student_id = student_manage.student_id
+            LEFT JOIN answer_time_manage ON answer_works_manage.works_answer_id = answer_time_manage.answer_id
+        <where>
+            <if test=" query.student_name !=null and query.student_name != '' "> and student_name  like  CONCAT(#{query.student_name},'%') </if>
+            <if test=" query.answer_question !=null and query.answer_question != '' "> and answer_question like CONCAT(#{query.answer_question},'%')</if>
+        </where>
+    </select>
+    
+    <select id="getClassName" resultMap="BaseResultMap" >
+        SELECT
+        class_manage.class_name,
+        answer_time_manage.answer_question,
+        student_manage.student_name,
+        answer_id,
+        student_id
+        FROM
+        class_manage
+        INNER JOIN answer_time_manage ON answer_time_manage.fk_class_id = class_manage.class_id
+        INNER JOIN student_manage ON student_manage.fk_class_id = class_manage.class_id
+        WHERE
+        answer_states = '完毕' group by class_name
+    </select>
+    
+    
+    
+    <select id="getStudentName" resultMap="BaseResultMap" parameterType="java.lang.String" >
+       SELECT
+        class_manage.class_name,
+        answer_time_manage.answer_question,
+        student_manage.student_name,
+        answer_id,
+        student_id
+        FROM
+        class_manage
+        INNER JOIN answer_time_manage ON answer_time_manage.fk_class_id = class_manage.class_id
+        INNER JOIN student_manage ON student_manage.fk_class_id = class_manage.class_id
+        WHERE
+    answer_states = '完毕' and class_name = #{class_name}
+    </select>
+    
+    
+    <insert id="workAdd" parameterType="com.crane.answer.works.model.Works" >
+        insert into answer_works_manage
+        <trim prefix="(" suffix=")" suffixOverrides="," >
+                works_id,
+            <if test="works_student_id != null" >
+                works_student_id,
+            </if>
+            <if test="works_answer_id != null" >
+                works_answer_id,
+            </if>
+            <if test="works_label != null" >
+                works_label,
+            </if>
+            <if test="works_code_update != null" >
+                works_code_update,
+            </if>
+            <if test="works_js_data != null" >
+                works_js_data,
+            </if>
+            <if test="works_video != null" >
+                works_video,
+            </if>
+                works_states
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides="," >
+           UUID(),
+            <if test="works_student_id != null" >
+                #{works_student_id,jdbcType=VARCHAR},
+            </if>
+            <if test="works_answer_id != null" >
+                #{works_answer_id,jdbcType=VARCHAR},
+            </if>
+            <if test="works_label != null" >
+                #{works_label,jdbcType=VARCHAR},
+            </if>
+            <if test="works_code_update != null" >
+                #{works_code_update,jdbcType=VARCHAR},
+            </if>
+            <if test="works_js_data != null" >
+                #{works_js_data,jdbcType=VARCHAR},
+            </if>
+            <if test="works_video != null" >
+                #{works_video,jdbcType=VARCHAR},
+            </if>
+                '1'
+        </trim>
+    </insert>
+    
+    <select id="getOneWork" resultMap="BaseResultMap" parameterType="java.lang.String" >
+          SELECT
+            answer_works_manage.works_id,
+            answer_works_manage.works_student_id,
+            answer_works_manage.works_answer_id,
+            answer_works_manage.works_label,
+            answer_works_manage.works_code_update,
+            answer_works_manage.works_js_data,
+            answer_works_manage.works_video,
+            answer_works_manage.works_states,
+            student_manage.student_name,
+            answer_time_manage.answer_question
+            FROM
+            answer_works_manage
+            LEFT JOIN student_manage ON answer_works_manage.works_student_id = student_manage.student_id
+            LEFT JOIN answer_time_manage ON answer_works_manage.works_answer_id = answer_time_manage.answer_id
+        where works_id = #{works_id,jdbcType=VARCHAR}
+    </select>
+    
+    <update id="workUpdate" parameterType="com.crane.answer.works.model.Works">
+        update answer_works_manage
+        <set >
+            <if test="works_code_update != null" >
+                works_code_update = #{works_code_update,jdbcType=VARCHAR},
+            </if>
+            <if test="works_js_data != null" >
+                works_js_data = #{works_js_data,jdbcType=VARCHAR},
+            </if>
+            <if test="works_video != null" >
+                works_video = #{works_video,jdbcType=VARCHAR},
+            </if>
+            <if test="works_states != null" >
+                works_states = #{works_states,jdbcType=VARCHAR},
+            </if>
+        </set>
+        where works_id = #{works_id,jdbcType=VARCHAR}
+    </update> 
+    
+    <delete id="workDel" parameterType="java.lang.String" >
+        delete from answer_works_manage
+        where works_id = #{works_id,jdbcType=VARCHAR}
+    </delete>
+    
+<!--     
+    <select id="load" resultMap="BaseResultMap" parameterType="java.lang.String" >
+        select 
+        <include refid="answer_works_manage_columns" />
+        from answer_works_manage
+        where works_id = #{works_id,jdbcType=VARCHAR}
+    </select>
+    <delete id="delete" parameterType="java.lang.String" >
+        delete from answer_works_manage
+        where works_id = #{works_id,jdbcType=VARCHAR}
+    </delete>
+    <insert id="add" parameterType="com.shxt.student.model.Works" >
+        insert into answer_works_manage
+        <trim prefix="(" suffix=")" suffixOverrides="," >
+            <if test="works_id != null" >
+                works_id,
+            </if>
+            <if test="works_student_id != null" >
+                works_student_id,
+            </if>
+            <if test="works_answer_id != null" >
+                works_answer_id,
+            </if>
+            <if test="works_label != null" >
+                works_label,
+            </if>
+            <if test="works_code_update != null" >
+                works_code_update,
+            </if>
+            <if test="works_js_data != null" >
+                works_js_data,
+            </if>
+            <if test="works_video != null" >
+                works_video,
+            </if>
+            <if test="works_states != null" >
+                works_states,
+            </if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides="," >
+            <if test="works_id != null" >
+                #{works_id,jdbcType=VARCHAR},
+            </if>
+            <if test="works_student_id != null" >
+                #{works_student_id,jdbcType=VARCHAR},
+            </if>
+            <if test="works_answer_id != null" >
+                #{works_answer_id,jdbcType=VARCHAR},
+            </if>
+            <if test="works_label != null" >
+                #{works_label,jdbcType=VARCHAR},
+            </if>
+            <if test="works_code_update != null" >
+                #{works_code_update,jdbcType=VARCHAR},
+            </if>
+            <if test="works_js_data != null" >
+                #{works_js_data,jdbcType=VARCHAR},
+            </if>
+            <if test="works_video != null" >
+                #{works_video,jdbcType=VARCHAR},
+            </if>
+            <if test="works_states != null" >
+                #{works_states,jdbcType=VARCHAR},
+            </if>
+        </trim>
+    </insert>
+    <update id="update" parameterType="com.shxt.student.model.Works" >
+        update answer_works_manage
+        <set >
+            <if test="works_student_id != null" >
+                works_student_id = #{works_student_id,jdbcType=VARCHAR},
+            </if>
+            <if test="works_answer_id != null" >
+                works_answer_id = #{works_answer_id,jdbcType=VARCHAR},
+            </if>
+            <if test="works_label != null" >
+                works_label = #{works_label,jdbcType=VARCHAR},
+            </if>
+            <if test="works_code_update != null" >
+                works_code_update = #{works_code_update,jdbcType=VARCHAR},
+            </if>
+            <if test="works_js_data != null" >
+                works_js_data = #{works_js_data,jdbcType=VARCHAR},
+            </if>
+            <if test="works_video != null" >
+                works_video = #{works_video,jdbcType=VARCHAR},
+            </if>
+            <if test="works_states != null" >
+                works_states = #{works_states,jdbcType=VARCHAR},
+            </if>
+        </set>
+        where works_id = #{works_id,jdbcType=VARCHAR}
+    </update> -->
+</mapper>

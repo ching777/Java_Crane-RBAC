@@ -1,0 +1,245 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.crane.resource.dao.ResourceDao">
+
+    <!-- 使用resultMap标签,针对于查询结果的映射说明,推荐方式 -->
+    <resultMap type="com.crane.resource.model.Resource" id="BaseResultMap">
+        <id property="resource_id" javaType="java.lang.Integer" column="resource_id" jdbcType="INTEGER" />
+        <result property="resource_name" javaType="java.lang.String" column="resource_name" jdbcType="VARCHAR" />
+        <result property="parent_id" javaType="java.lang.Integer" column="parent_id" jdbcType="INTEGER" />
+        <result property="url" javaType="java.lang.String" column="url" jdbcType="VARCHAR" />
+        <result property="icon" javaType="java.lang.String" column="icon" jdbcType="VARCHAR" />
+    </resultMap>
+    <sql id="sys_resource_columns">
+        resource_id,resource_name,parent_id,url,icon
+    </sql>
+
+    <sql id="sys_resource_columns_alias">
+        ${alias}.resource_id,${alias}.resource_name,${alias}.parent_id,${alias}.url,${alias}.icon
+    </sql>
+
+    <select id="getSelectedResourceListByRoleId" parameterType="integer" resultMap="BaseResultMap">
+        SELECT
+        <include refid="sys_resource_columns" />
+        FROM
+        role_mapping_resource rmr,
+        sys_resource sr
+        WHERE
+        rmr.fk_resource_id = sr.resource_id
+        AND
+        rmr.fk_role_id =#{roleId}
+    </select>
+<!-- 先查询小的resource_id 然后添加-->
+    <select id="selectMinResourceId"  parameterType="integer" resultType="int">
+    SELECT
+         MIN(resource_id) 
+    from 
+        sys_resource 
+    <where>
+        <if test="resource_id ==null">parent_id=-1</if>
+         <if test="resource_id !=null"> parent_id=#{resource_id} </if>
+    </where>
+    </select>
+    
+    
+    <insert id="addParent" parameterType="com.crane.resource.model.Resource">
+    INSERT INTO
+        sys_resource(
+        <trim suffixOverrides=",">
+        resource_id,
+        resource_name,
+        parent_id,
+        <if test="icon != null and icon != ''">icon,</if>
+        </trim>
+    )VALUES(
+        <trim suffixOverrides=",">
+        #{resource_id},
+        #{resource_name},
+        #{parent_id},
+        <if test="icon != null and icon != ''">#{icon},</if>
+        </trim>
+    )
+    </insert>    
+
+
+    <select id="checkResourceNameInparentId" resultType="int" >
+            SELECT
+                COUNT(*)
+            FROM
+                 sys_resource
+            WHERE
+                resource_name=#{param1} 
+            AND
+                parent_id=#{param2}
+    </select>
+
+    <select id="checkUrl" resultType="int" parameterType="string">
+     SELECT
+            COUNT(*)
+        FROM
+             sys_resource
+        WHERE
+            url=#{url}
+    </select>
+
+    <select id="checkParentName" parameterType="string" resultType="int">
+        SELECT
+            COUNT(*)
+        FROM
+             sys_resource
+        WHERE
+            resource_name=#{resource_name}
+    </select>
+
+    <select id="getUnSelectedResourceListByRoleId" parameterType="integer" resultMap="BaseResultMap">
+
+        Select
+        <include refid="sys_resource_columns" />
+        FROM
+        sys_resource
+        WHERE
+        resource_id
+        NOT IN
+        (SELECT
+        resource_id
+        FROM
+        role_mapping_resource rmr,
+        sys_resource sr
+        WHERE
+        rmr.fk_resource_id = sr.resource_id
+        AND
+        rmr.fk_role_id =#{roleId})
+        AND
+        parent_id!=-1
+    </select>
+
+    <select id="getSelectParentResourceListByRoleId" parameterType="integer" resultMap="BaseResultMap">
+        SELECT
+        <include refid="sys_resource_columns" />
+        FROM
+        sys_resource
+        WHERE
+        resource_id IN (
+        SELECT DISTINCT
+        sr.parent_id
+        FROM
+        role_mapping_resource rmr,
+        sys_resource sr
+        WHERE
+        rmr.fk_resource_id =
+        sr.resource_id
+        AND rmr.fk_role_id =#{roleId}
+        )
+    </select>
+
+    <delete id="deleteRoleMappingResource" parameterType="integer">
+        DELETE FROM
+        role_mapping_resource
+        WHERE
+        fk_role_id=#{role_id}
+    </delete>
+    
+    
+    <insert id="insertRoleMappingResource">
+        INSERT INTO
+            role_mapping_resource
+            (id,fk_role_id,fk_resource_id)
+        VALUES
+            <foreach collection="resources" item="resource_id" separator=",">
+            (UUID(),#{role_id},#{resource_id})
+        </foreach>
+    </insert>
+    
+    <!-- 保存不进去 -->
+     <insert id="addChlidNode" parameterType="com.crane.resource.model.Resource">
+      INSERT INTO
+            sys_resource(
+         <trim suffixOverrides=",">
+            resource_id,
+            resource_name,
+            parent_id,
+            <if test="url != null and url != ''">url</if>
+            </trim>
+        )VALUES(
+         <trim suffixOverrides=",">
+            #{resource_id},
+            #{resource_name},
+            #{parent_id},
+            <if test="url != null and url != ''">#{url}</if>
+            </trim>
+        )
+     </insert>
+    
+    <select id="getParentId" resultMap="BaseResultMap">
+        SELECT 
+            <include refid="sys_resource_columns"/>
+        FROM    
+            sys_resource
+        WHERE
+          parent_id = -1
+        ORDER BY resource_id
+    </select>
+    
+    <select id="getChildId" resultMap="BaseResultMap">
+        SELECT 
+            <include refid="sys_resource_columns"/>
+        FROM    
+            sys_resource
+        WHERE
+          parent_id != -1
+        ORDER BY resource_id 
+    </select>
+    
+    
+    <select id="load" resultMap="BaseResultMap" >
+    SELECT 
+        <include refid="sys_resource_columns"/>
+    FROM
+        sys_resource
+    WHERE
+        resource_id=#{resource_id}
+    </select>
+    
+    <delete id="del" parameterType="integer">
+     DELETE FROM
+        sys_resource
+     WHERE
+        resource_id=#{resource_id}
+    </delete>
+    
+    <!-- 删除子节点的时候 删除中间表 -->
+    <delete id="del_role_mapping_resource" parameterType="integer">
+      DELETE FROM
+        role_mapping_resource
+     WHERE
+        fk_resource_id=#{resource_id}
+    </delete>
+    
+    
+    <select id="getParentResource_id" parameterType="integer" resultType="int">
+        SELECT
+            COUNT(*)
+        FROM
+            sys_resource
+        WHERE
+            parent_id = #{resource_id}
+    </select>
+    
+    <update id="updateResource" parameterType="com.crane.resource.model.Resource">
+     UPDATE 
+        sys_resource
+    <set>
+        <if test="resource_name != null ">resource_name=#{resource_name},</if>
+        <if test="parent_id != null and parent_id != ''">parent_id=#{parent_id},</if>
+        <if test="url != null and url != ''">url=#{url},</if>
+        <if test="icon != null and icon != ''">icon=#{icon},</if>
+    </set>
+    WHERE
+        resource_id=#{resource_id}
+    </update>
+    
+    
+</mapper>

@@ -1,0 +1,230 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.crane.answer.timemanage.dao.TimeDao" >
+    <resultMap id="BaseResultMap" type="com.crane.answer.timemanage.model.Time" >
+        <id column="answer_id" property="answer_id" jdbcType="VARCHAR" />
+        <result column="answer_apple_date" property="answer_apple_date" jdbcType="DATE" />
+        <result column="fk_class_id" property="fk_class_id" jdbcType="VARCHAR" />
+        <result column="answer_people_number" property="answer_people_number" jdbcType="INTEGER" />
+        <result column="answer_question" property="answer_question" jdbcType="VARCHAR" />
+        <result column="answer_judge_name" property="answer_judge_name" jdbcType="VARCHAR" />
+        <result column="answer_states" property="answer_states" jdbcType="VARCHAR" />
+        <result column="answer_delay_reason" property="answer_delay_reason" jdbcType="VARCHAR" />
+    </resultMap>
+    
+    <resultMap type="com.crane.answer.timemanage.model.Time" id="Time_Class" extends="BaseResultMap">
+        <association property="clazz" javaType="com.crane.answer.clazzmanage.model.Clazz" resultMap="com.crane.answer.clazzmanage.dao.ClazzDao.BaseResultMap"/>
+    
+    </resultMap>
+    
+    
+    
+   <sql id="answer_time_manage_columns" >
+        answer_id, answer_apple_date, fk_class_id, answer_people_number, answer_question, 
+        answer_judge_name, answer_states, answer_delay_reason
+    </sql>
+    
+    <select id="answerTimeInfo" resultMap="Time_Class" parameterType="string">
+     SELECT
+        <include refid="answer_time_manage_columns"/>,
+        <include refid="com.crane.answer.clazzmanage.dao.ClazzDao.class_manage_columns"/>
+    FROM
+         answer_time_manage
+    LEFT JOIN class_manage ON answer_time_manage.fk_class_id = class_manage.class_id
+    WHERE answer_id = #{answer_id}
+    </select>
+    
+    <select id="getAnswerTime" resultMap="Time_Class" parameterType="com.crane.commons.model.Pager">
+   SELECT
+        <include refid="answer_time_manage_columns"/>,
+        <include refid="com.crane.answer.clazzmanage.dao.ClazzDao.class_manage_columns"/>
+    FROM
+         answer_time_manage
+    LEFT JOIN class_manage ON answer_time_manage.fk_class_id = class_manage.class_id
+        <if test="query.answer_states==null">WHERE answer_time_manage.answer_states = '通过'</if>
+        <if test="query.answer_states=='申请中'">WHERE answer_time_manage.answer_states = #{query.answer_states}</if>
+        <if test="query.answer_states=='通过'">WHERE answer_time_manage.answer_states = #{query.answer_states}</if>
+        <if test="query.answer_states=='延期'">WHERE answer_time_manage.answer_states = #{query.answer_states}</if>
+        <if test="query.answer_states=='完毕'">WHERE answer_time_manage.answer_states = #{query.answer_states}</if>
+    ORDER BY
+        answer_time_manage.answer_apple_date ASC
+    </select>
+    
+    <insert id="answerTimeAdd" parameterType="com.crane.answer.timemanage.model.Time" >
+        insert into answer_time_manage
+        <trim prefix="(" suffix=")" suffixOverrides="," >
+                answer_id,
+            <if test="answer_apple_date != null" >
+                answer_apple_date,
+            </if>
+            <if test="fk_class_id != null" >
+                fk_class_id,
+            </if>
+            <if test="answer_people_number != null" >
+                answer_people_number,
+            </if>
+            <if test="answer_question != null" >
+                answer_question,
+            </if>
+            <if test="answer_judge_name != null" >
+                answer_judge_name,
+            </if>
+            <if test="answer_states != null" >
+                answer_states,
+            </if>
+            <if test="answer_delay_reason != null" >
+                answer_delay_reason,
+            </if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides="," >
+            UUID(),
+            <if test="answer_apple_date != null" >
+                #{answer_apple_date,jdbcType=DATE},
+            </if>
+            <if test="fk_class_id != null" >
+                #{fk_class_id,jdbcType=VARCHAR},
+            </if>
+            <if test="answer_people_number != null" >
+                #{answer_people_number,jdbcType=INTEGER},
+            </if>
+            <if test="answer_question != null" >
+                #{answer_question,jdbcType=VARCHAR},
+            </if>
+            <if test="answer_judge_name != null" >
+                #{answer_judge_name,jdbcType=VARCHAR},
+            </if>
+            <if test="answer_states != null" >
+                #{answer_states,jdbcType=VARCHAR},
+            </if>
+            <if test="answer_delay_reason != null" >
+                #{answer_delay_reason,jdbcType=VARCHAR},
+            </if>
+        </trim>
+    </insert>
+    
+    <update id="timeUpdate" parameterType="com.crane.answer.timemanage.model.Time">
+        update answer_time_manage
+        <set >
+            <if test="answer_apple_date != null" >
+                answer_apple_date = #{answer_apple_date,jdbcType=DATE},
+            </if>
+            <if test="fk_class_id != null" >
+                fk_class_id = #{fk_class_id,jdbcType=VARCHAR},
+            </if>
+            <if test="answer_people_number != null" >
+                answer_people_number = #{answer_people_number,jdbcType=INTEGER},
+            </if>
+            <if test="answer_question != null" >
+                answer_question = #{answer_question,jdbcType=VARCHAR},
+            </if>
+            <if test="answer_judge_name != null" >
+                answer_judge_name = #{answer_judge_name,jdbcType=VARCHAR},
+            </if>
+            <if test="answer_states != null" >
+                answer_states = #{answer_states,jdbcType=VARCHAR},
+            </if>
+            <if test="answer_delay_reason != null" >
+                answer_delay_reason = #{answer_delay_reason,jdbcType=VARCHAR},
+            </if>
+        </set>
+        where answer_id = #{answer_id,jdbcType=VARCHAR}
+    </update> 
+    
+    
+ <!--    <sql id="answer_time_manage_columns" >
+        answer_id, answer_apple_date, fk_class_id, answer_people_number, answer_question, 
+        answer_judge_name, answer_states, answer_delay_reason
+    </sql>
+    <select id="load" resultMap="BaseResultMap" parameterType="java.lang.String" >
+        select 
+        <include refid="answer_time_manage_columns" />
+        from answer_time_manage
+        where answer_id = #{answer_id,jdbcType=VARCHAR}
+    </select>
+    <delete id="delete" parameterType="java.lang.String" >
+        delete from answer_time_manage
+        where answer_id = #{answer_id,jdbcType=VARCHAR}
+    </delete>
+    <insert id="add" parameterType="com.shxt.student.model.Time" >
+        insert into answer_time_manage
+        <trim prefix="(" suffix=")" suffixOverrides="," >
+            <if test="answer_id != null" >
+                answer_id,
+            </if>
+            <if test="answer_apple_date != null" >
+                answer_apple_date,
+            </if>
+            <if test="fk_class_id != null" >
+                fk_class_id,
+            </if>
+            <if test="answer_people_number != null" >
+                answer_people_number,
+            </if>
+            <if test="answer_question != null" >
+                answer_question,
+            </if>
+            <if test="answer_judge_name != null" >
+                answer_judge_name,
+            </if>
+            <if test="answer_states != null" >
+                answer_states,
+            </if>
+            <if test="answer_delay_reason != null" >
+                answer_delay_reason,
+            </if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides="," >
+            <if test="answer_id != null" >
+                #{answer_id,jdbcType=VARCHAR},
+            </if>
+            <if test="answer_apple_date != null" >
+                #{answer_apple_date,jdbcType=DATE},
+            </if>
+            <if test="fk_class_id != null" >
+                #{fk_class_id,jdbcType=VARCHAR},
+            </if>
+            <if test="answer_people_number != null" >
+                #{answer_people_number,jdbcType=INTEGER},
+            </if>
+            <if test="answer_question != null" >
+                #{answer_question,jdbcType=VARCHAR},
+            </if>
+            <if test="answer_judge_name != null" >
+                #{answer_judge_name,jdbcType=VARCHAR},
+            </if>
+            <if test="answer_states != null" >
+                #{answer_states,jdbcType=VARCHAR},
+            </if>
+            <if test="answer_delay_reason != null" >
+                #{answer_delay_reason,jdbcType=VARCHAR},
+            </if>
+        </trim>
+    </insert>
+    <update id="update" parameterType="com.shxt.student.model.Time" >
+        update answer_time_manage
+        <set >
+            <if test="answer_apple_date != null" >
+                answer_apple_date = #{answer_apple_date,jdbcType=DATE},
+            </if>
+            <if test="fk_class_id != null" >
+                fk_class_id = #{fk_class_id,jdbcType=VARCHAR},
+            </if>
+            <if test="answer_people_number != null" >
+                answer_people_number = #{answer_people_number,jdbcType=INTEGER},
+            </if>
+            <if test="answer_question != null" >
+                answer_question = #{answer_question,jdbcType=VARCHAR},
+            </if>
+            <if test="answer_judge_name != null" >
+                answer_judge_name = #{answer_judge_name,jdbcType=VARCHAR},
+            </if>
+            <if test="answer_states != null" >
+                answer_states = #{answer_states,jdbcType=VARCHAR},
+            </if>
+            <if test="answer_delay_reason != null" >
+                answer_delay_reason = #{answer_delay_reason,jdbcType=VARCHAR},
+            </if>
+        </set>
+        where answer_id = #{answer_id,jdbcType=VARCHAR}
+    </update> -->
+</mapper>

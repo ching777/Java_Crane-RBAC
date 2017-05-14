@@ -1,0 +1,311 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.crane.answer.studentmanage.dao.StudentDao" >
+    <resultMap id="BaseResultMap" type="com.crane.answer.studentmanage.model.Student" >
+       <id column="student_id" property="student_id" jdbcType="VARCHAR" />
+        <result column="student_name" property="student_name" jdbcType="VARCHAR" />
+        <result column="student_number" property="student_number" jdbcType="VARCHAR" />
+        <result column="student_stage" property="student_stage" jdbcType="VARCHAR" />
+        <result column="student_sex" property="student_sex" jdbcType="VARCHAR" />
+        <result column="student_school" property="student_school" jdbcType="VARCHAR" />
+        <result column="student_grade" property="student_grade" jdbcType="VARCHAR" />
+        <result column="student_major" property="student_major" jdbcType="VARCHAR" />
+        <result column="student_product" property="student_product" jdbcType="VARCHAR" />
+        <result column="student_teacher_name" property="student_teacher_name" jdbcType="VARCHAR" />
+        <result column="fk_class_id" property="fk_class_id" jdbcType="VARCHAR" />
+    </resultMap>
+    
+    <resultMap type="com.crane.answer.studentmanage.model.Student" id="student_clazz" extends="BaseResultMap">
+        <association property="clazz" javaType="com.crane.answer.clazzmanage.model.Clazz" resultMap="com.crane.answer.clazzmanage.dao.ClazzDao.BaseResultMap"></association>
+    
+    </resultMap>
+    <sql id="student_manage_columns" >
+        student_id, student_name, student_number, student_stage, student_sex, student_school, 
+        student_grade, student_major, student_product, student_teacher_name, fk_class_id
+    </sql>
+    
+    <select id="studentList" resultMap="student_clazz"  parameterType="com.crane.commons.model.Pager">
+    SELECT
+       <include refid="student_manage_columns"/>,
+       <include refid="com.crane.answer.clazzmanage.dao.ClazzDao.class_manage_columns"/>
+    FROM
+        student_manage
+    LEFT JOIN 
+        class_manage 
+    ON 
+        student_manage.fk_class_id = class_manage.class_id
+    <where>
+        <if test=" query.student_name != null and query.student_name != ''">student_name = #{query.student_name}</if>
+        <if test=" query.class_name != null and query.class_name != ''"> and class_name = #{query.class_name}</if>
+        <if test=" query.student_sex != null and query.student_sex != ''">and student_sex = #{query.student_sex}</if>
+        <if test=" query.stage == null">and student_stage !=-1</if>
+        
+    </where>
+    LIMIT
+        ${offset},${pageSize}        
+    </select>
+    
+    <select id="studentCount" resultType="integer"  parameterType="com.crane.commons.model.Pager">
+    SELECT
+      count(*)
+    FROM
+        student_manage
+    LEFT JOIN 
+        class_manage 
+    ON 
+        student_manage.fk_class_id = class_manage.class_id
+    <where>
+        <if test=" query.student_name != null and query.student_name != ''">student_name = #{query.student_name}</if>
+        <if test=" query.class_name != null and query.class_name != ''">and class_name = #{query.class_name}</if>
+        <if test=" query.student_sex != null and query.student_sex != ''">and student_sex = #{query.student_sex}</if>
+        and student_stage !=-1
+    </where>
+    LIMIT
+        ${offset},${pageSize}        
+    </select>
+    
+    <select id="checkStudentNumber" resultType="integer" parameterType="string" >
+        select 
+            count(*)
+        from 
+            student_manage
+        where 
+            student_number = #{student_number,jdbcType=VARCHAR}
+    </select>
+    
+    <insert id="studentAdd" parameterType="com.crane.answer.studentmanage.model.Student" >
+        insert into student_manage
+        <trim prefix="(" suffix=")" suffixOverrides="," >
+                student_id,
+            <if test="student_name != null" >
+                student_name,
+            </if>
+            <if test="student_number != null" >
+                student_number,
+            </if>
+                student_stage,
+            <if test="student_sex != null" >
+                student_sex,
+            </if>
+            <if test="student_school != null" >
+                student_school,
+            </if>
+            <if test="student_grade != null" >
+                student_grade,
+            </if>
+            <if test="student_major != null" >
+                student_major,
+            </if>
+            <if test="student_product != null" >
+                student_product,
+            </if>
+            <if test="student_teacher_name != null" >
+                student_teacher_name,
+            </if>
+            <if test="fk_class_id != null" >
+                fk_class_id,
+            </if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides="," >
+            UUID(),
+            <if test="student_name != null" >
+                #{student_name,jdbcType=VARCHAR},
+            </if>
+            <if test="student_number != null" >
+                #{student_number,jdbcType=VARCHAR},
+            </if>
+                '在读',
+            <if test="student_sex != null" >
+                #{student_sex,jdbcType=VARCHAR},
+            </if>
+            <if test="student_school != null" >
+                #{student_school,jdbcType=VARCHAR},
+            </if>
+            <if test="student_grade != null" >
+                #{student_grade,jdbcType=VARCHAR},
+            </if>
+            <if test="student_major != null" >
+                #{student_major,jdbcType=VARCHAR},
+            </if>
+            <if test="student_product != null" >
+                #{student_product,jdbcType=VARCHAR},
+            </if>
+            <if test="student_teacher_name != null" >
+                #{student_teacher_name,jdbcType=VARCHAR},
+            </if>
+            <if test="fk_class_id != null" >
+                #{fk_class_id,jdbcType=VARCHAR},
+            </if>
+        </trim>
+    </insert>
+    
+    <select id="studentInfo" resultMap="BaseResultMap" parameterType="java.lang.String">
+        select 
+        <include refid="student_manage_columns" />
+        from student_manage
+        where student_id = #{student_id,jdbcType=VARCHAR}
+    </select>
+    
+     <update id="studentEdit" parameterType="com.crane.answer.studentmanage.model.Student">
+        update student_manage
+        <set >
+            <if test="student_name != null" >
+                student_name = #{student_name,jdbcType=VARCHAR},
+            </if>
+            <if test="student_stage != null" >
+                student_stage = #{student_stage,jdbcType=VARCHAR},
+            </if>
+            <if test="student_sex != null" >
+                student_sex = #{student_sex,jdbcType=VARCHAR},
+            </if>
+            <if test="student_school != null" >
+                student_school = #{student_school,jdbcType=VARCHAR},
+            </if>
+            <if test="student_grade != null" >
+                student_grade = #{student_grade},
+            </if>
+            <if test="student_major != null" >
+                student_major = #{student_major},
+            </if>
+            <if test="student_product != null" >
+                student_product = #{student_product,jdbcType=VARCHAR},
+            </if>
+            <if test="student_teacher_name != null" >
+                student_teacher_name = #{student_teacher_name,jdbcType=VARCHAR},
+            </if>
+            <if test="fk_class_id != null" >
+                fk_class_id = #{fk_class_id,jdbcType=VARCHAR},
+            </if>
+        </set>
+        where student_id = #{student_id,jdbcType=VARCHAR}
+    </update>
+    
+     <update id="studentUpdateStage" parameterType="com.crane.answer.studentmanage.model.Student">
+        UPDATE 
+            student_manage
+        SET
+            student_stage = #{student_stage}
+        WHERE 
+            fk_class_id = #{fk_class_id}
+    </update>
+    
+<!--     <select id="load" resultMap="BaseResultMap" parameterType="java.lang.String" >
+        select 
+        <include refid="student_manage_columns" />
+        from student_manage
+        where student_id = #{student_id,jdbcType=VARCHAR}
+    </select>
+    <delete id="delete" parameterType="java.lang.String" >
+        delete from student_manage
+        where student_id = #{student_id,jdbcType=VARCHAR}
+    </delete>
+    <insert id="add" parameterType="com.shxt.student.model.Student" >
+        insert into student_manage
+        <trim prefix="(" suffix=")" suffixOverrides="," >
+            <if test="student_id != null" >
+                student_id,
+            </if>
+            <if test="student_name != null" >
+                student_name,
+            </if>
+            <if test="student_number != null" >
+                student_number,
+            </if>
+            <if test="student_stage != null" >
+                student_stage,
+            </if>
+            <if test="student_sex != null" >
+                student_sex,
+            </if>
+            <if test="student_school != null" >
+                student_school,
+            </if>
+            <if test="student_grade != null" >
+                student_grade,
+            </if>
+            <if test="student_major != null" >
+                student_major,
+            </if>
+            <if test="student_product != null" >
+                student_product,
+            </if>
+            <if test="student_teacher_name != null" >
+                student_teacher_name,
+            </if>
+            <if test="fk_class_id != null" >
+                fk_class_id,
+            </if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides="," >
+            <if test="student_id != null" >
+                #{student_id,jdbcType=VARCHAR},
+            </if>
+            <if test="student_name != null" >
+                #{student_name,jdbcType=VARCHAR},
+            </if>
+            <if test="student_number != null" >
+                #{student_number,jdbcType=VARCHAR},
+            </if>
+            <if test="student_stage != null" >
+                #{student_stage,jdbcType=VARCHAR},
+            </if>
+            <if test="student_sex != null" >
+                #{student_sex,jdbcType=VARCHAR},
+            </if>
+            <if test="student_school != null" >
+                #{student_school,jdbcType=VARCHAR},
+            </if>
+            <if test="student_grade != null" >
+                #{student_grade,jdbcType=VARCHAR},
+            </if>
+            <if test="student_major != null" >
+                #{student_major,jdbcType=VARCHAR},
+            </if>
+            <if test="student_product != null" >
+                #{student_product,jdbcType=VARCHAR},
+            </if>
+            <if test="student_teacher_name != null" >
+                #{student_teacher_name,jdbcType=VARCHAR},
+            </if>
+            <if test="fk_class_id != null" >
+                #{fk_class_id,jdbcType=VARCHAR},
+            </if>
+        </trim>
+    </insert>
+    <update id="update" parameterType="com.shxt.student.model.Student" >
+        update student_manage
+        <set >
+            <if test="student_name != null" >
+                student_name = #{student_name,jdbcType=VARCHAR},
+            </if>
+            <if test="student_number != null" >
+                student_number = #{student_number,jdbcType=VARCHAR},
+            </if>
+            <if test="student_stage != null" >
+                student_stage = #{student_stage,jdbcType=VARCHAR},
+            </if>
+            <if test="student_sex != null" >
+                student_sex = #{student_sex,jdbcType=VARCHAR},
+            </if>
+            <if test="student_school != null" >
+                student_school = #{student_school,jdbcType=VARCHAR},
+            </if>
+            <if test="student_grade != null" >
+                student_grade = #{student_grade,jdbcType=VARCHAR},
+            </if>
+            <if test="student_major != null" >
+                student_major = #{student_major,jdbcType=VARCHAR},
+            </if>
+            <if test="student_product != null" >
+                student_product = #{student_product,jdbcType=VARCHAR},
+            </if>
+            <if test="student_teacher_name != null" >
+                student_teacher_name = #{student_teacher_name,jdbcType=VARCHAR},
+            </if>
+            <if test="fk_class_id != null" >
+                fk_class_id = #{fk_class_id,jdbcType=VARCHAR},
+            </if>
+        </set>
+        where student_id = #{student_id,jdbcType=VARCHAR}
+    </update> -->
+</mapper>

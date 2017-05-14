@@ -1,0 +1,192 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"  
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.crane.rbac.user.dao.UserDao">
+    <!-- type = 返回的类的路径 -->
+    <resultMap type="com.crane.rbac.user.model.User" id="returnMap">
+        <id property="user_id" javaType="java.lang.Integer" column="user_id" jdbcType="INTEGER" />
+        <id property="account" javaType="java.lang.String" column="account" jdbcType="VARCHAR" />
+        <id property="password" javaType="java.lang.String" column="password" jdbcType="VARCHAR" />
+        <id property="email" javaType="java.lang.String" column="email" jdbcType="VARCHAR" />
+        <id property="tel" javaType="java.lang.String" column="tel" jdbcType="VARCHAR" />
+        <id property="user_status" javaType="java.lang.Integer" column="user_status" jdbcType="INTEGER" />
+        <id property="fk_group_id" javaType="java.lang.Integer" column="fk_group_id" jdbcType="INTEGER" />
+        <id property="fk_user_detail_id" javaType="java.lang.Integer" column="fk_user_detail_id" jdbcType="INTEGER" />
+        <id property="fk_role_id" javaType="java.lang.Integer" column="fk_role_id" jdbcType="INTEGER" />
+    </resultMap>
+    
+     <resultMap type="com.crane.rbac.user.model.User" id="session_user" extends="returnMap">
+        <association property="userDetail" javaType="com.crane.rbac.user.model.UserDetail" resultMap="com.crane.rbac.user.dao.UserDetailDao.BaseResultMap" />
+    </resultMap>
+
+
+    <sql id="sys_user_columns">
+        user_id,account,password,email,tel,user_status,fk_group_id,fk_user_detail_id,fk_role_id
+    </sql>
+
+    <sql id="sys_user_columns_alias">
+        ${alias}.user_id,${alias}.account,${alias}.password,${alias}.email,${alias}.tel,${alias}.user_status,${alias}.fk_group_id,${alias}.fk_user_detail_id,${alias}.fk_role_id
+    </sql>
+
+
+    <select id="login"  resultMap="session_user">
+        SELECT
+        <include refid="sys_user_columns_alias">
+            <property name="alias" value="su"/>
+        </include>
+        ,
+        <include refid="com.crane.rbac.user.dao.UserDetailDao.sys_user_detail_columns_alias">
+            <property name="alias" value="sud"/>
+        </include>
+        FROM
+        sys_user su
+        LEFT JOIN sys_user_detail sud ON su.fk_user_detail_id = sud.id
+        WHERE
+        (su.account=#{param1} OR su.email=#{param1} OR
+        su.tel=#{param1})
+        AND
+        su.password=#{param2}
+    </select>
+
+    <resultMap type="com.crane.rbac.user.model.User" id="SimpleUserResultMap" extends="returnMap">
+        <association property="userDetail" javaType="com.crane.rbac.user.model.UserDetail" resultMap="com.crane.rbac.user.dao.UserDetailDao.BaseResultMap" />
+        <association property="role" javaType="com.crane.rbac.role.model.Role" resultMap="com.crane.rbac.role.dao.RoleDao.BaseResultMap" />
+        <association property="group" javaType="com.crane.rbac.group.model.Group" resultMap="com.crane.rbac.group.dao.GroupDao.BaseResultMap" />
+    </resultMap>
+
+
+    <select id="find" parameterType="com.crane.commons.model.Pager" resultMap="SimpleUserResultMap">
+        SELECT
+        *
+        FROM
+        view_user_detail
+        <where>
+            <if test="query.account !=null and query.account != ''">
+                account like concat( #{query.account},'%')
+            </if>
+            <if test="query.sex != null and query.sex != ''">
+                and sex = #{query.sex}
+            </if>
+        </where>
+        ORDER BY
+        user_id
+        LIMIT
+        ${offset},${pageSize}
+    </select>
+
+    <select id="find_count" parameterType="com.crane.commons.model.Pager" resultType="int">
+        SELECT
+        COUNT(*)
+        FROM
+        view_user_detail
+        <where>
+            <if test="query.sex != null and query.sex != ''">
+                sex = #{query.sex}
+            </if>
+            <if test="query.account !=null and query.account != ''">
+                and account like concat( #{query.account},'%')
+            </if>
+        </where>
+    </select>
+
+    <select id="checkEmail" parameterType="string" resultType="int">
+    SELECT 
+          COUNT(email)
+    FROM
+        sys_user
+    WHERE
+        email = #{email}
+    </select>
+
+
+    <select id="checkTel" parameterType="string" resultType="int">
+    SELECT 
+        COUNT(tel)
+    FROM
+        sys_user
+    WHERE
+        tel = #{tel}
+    </select>
+
+    <select id="getPhtoto" parameterType="int" resultType="map">
+        SELECT
+        su.user_id,su.fk_user_detail_id,sud.photo
+        FROM
+        sys_user su
+        LEFT JOIN
+        sys_user_detail sud ON su.fk_user_detail_id=sud.id
+        WHERE
+        su.user_id=#{user_id}
+    </select>
+
+    <resultMap type="com.crane.rbac.user.model.User" id="UserDetailResultMap" extends="returnMap">
+        <association property="userDetail" javaType="com.crane.rbac.user.model.UserDetail" resultMap="com.crane.rbac.user.dao.UserDetailDao.BaseResultMap" />
+    </resultMap>
+
+    <select id="getUserDetailByPK" parameterType="int" resultMap="UserDetailResultMap">
+        SELECT
+        <include refid="sys_user_columns_alias">
+            <property name="alias" value="su" />
+        </include>
+        ,
+        <include refid="com.crane.rbac.user.dao.UserDetailDao.sys_user_detail_columns_alias">
+            <property name="alias" value="sud" />
+        </include>
+        FROM
+        sys_user su
+        LEFT JOIN
+        sys_user_detail sud
+        ON su.fk_user_detail_id=sud.id
+        WHERE
+        su.user_id=#{user_id}
+    </select>
+    <!--user 添加 -->
+    <select id="checkAccount" parameterType="string" resultType="int">
+      SELECT
+            COUNT(*)
+      FROM
+            sys_user
+      WHERE
+            account = #{account}
+    </select>
+    <!-- keyProperty="user_id" useGeneratedKeys="true" 返回主键 -->
+    <insert id="userAdd" parameterType="com.crane.rbac.user.model.User" keyProperty="user_id" useGeneratedKeys="true">
+    INSERT INTO
+        sys_user(
+        account,password
+    )VALUES(
+        #{account},#{password}
+        )
+    </insert>
+    <!-- 修改 -->
+    <update id="userUpdate" parameterType="com.crane.rbac.user.model.User">
+    UPDATE
+        sys_user
+    SET
+     tel = #{tel},
+     email = #{email},
+     fk_group_id = #{fk_group_id},
+     fk_role_id = #{fk_role_id}
+    WHERE
+        user_id = #{user_id}
+    </update>
+    
+    <!-- 删除 -->
+    <delete id="userDelete" parameterType="integer">
+    DELETE
+    FROM
+        sys_user
+    WHERE
+        user_id = #{user_id}
+    </delete>
+    
+    <update id="updateUserfk_user_detail_id" parameterType="integer">
+    UPDATE 
+        sys_user
+    SET
+        fk_user_detail_id = #{param1}   
+    WHERE
+        user_id = #{param2}
+    </update>
+    
+</mapper>

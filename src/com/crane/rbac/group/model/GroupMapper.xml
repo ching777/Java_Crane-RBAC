@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.crane.rbac.group.dao.GroupDao">
+    <resultMap type="com.crane.rbac.group.model.Group" id="BaseResultMap">
+        <id property="group_id" javaType="java.lang.Integer" column="group_id" jdbcType="INTEGER" />
+        <result property="group_name" javaType="java.lang.String" column="group_name" jdbcType="VARCHAR" />
+        <result property="market" javaType="java.lang.String" column="market" jdbcType="VARCHAR" />
+    </resultMap>
+    
+    <sql id="group_column">
+    group_id,
+    group_name,
+    market
+    </sql>
+    
+    <select id="list" resultMap="BaseResultMap">
+   <!--  SELECT 
+        <include refid="group_column"></include>
+    FROM
+        sys_group
+    GROUP BY
+        group_name -->
+    SELECT
+        sg.group_id,
+        sg.group_name,
+        sg.market,
+        su.peopleCount
+    FROM
+        sys_group sg
+    LEFT JOIN (
+        SELECT
+            fk_group_id,
+            COUNT(fk_group_id) peopleCount
+        FROM
+            sys_user
+        GROUP BY
+            fk_group_id
+    ) su ON sg.group_id = su.fk_group_id
+    </select>
+    
+    <select id="getCountPeople" parameterType="integer" resultType="int">
+    SELECT
+        COUNT(*)
+    FROM
+        sys_user
+    WHERE   
+        fk_group_id = #{group_id}
+    </select>
+
+    <select id="groupUserInfo" parameterType="integer" resultMap="com.crane.rbac.user.dao.UserDao.SimpleUserResultMap">
+   SELECT
+    *
+    FROM
+        view_user_detail
+    WHERE
+        fk_group_id = #{group_id}
+    </select>
+    
+    <select id="getGroupInfo" parameterType="integer" resultMap="BaseResultMap">
+    SELECT
+        <include refid="group_column"/>
+    FROM 
+        sys_group
+    WHERE
+        group_id=#{group_id}
+    </select>
+    
+    <select id="checkGroupName" parameterType="string" resultType="int">
+    SELECT 
+        COUNT(*)
+    FROM
+        sys_group
+    WHERE
+        group_name = #{group_name}
+    </select>
+    
+    <update id="groupUpdate" parameterType="com.crane.rbac.group.model.Group" >
+    UPDATE sys_group
+        SET group_name = #{group_name},market=#{market}
+    WHERE
+        group_id = #{group_id}
+    </update>
+    
+    <update id="removeUserGroup" parameterType="integer" >
+    UPDATE sys_user
+    SET fk_group_id = null
+    WHERE
+        user_id = #{user_id}
+    </update>
+    
+    <delete id="deleteGroup" parameterType="integer">
+    DELETE FROM
+        sys_group
+    WHERE   
+        group_id = #{group_id}
+    </delete>
+
+
+    <insert id="groupAdd" parameterType="com.crane.rbac.group.model.Group" keyProperty="group_id" useGeneratedKeys="true">
+    INSERT into
+        sys_group(
+        <trim suffixOverrides=",">
+        <if test=" group_name != null and group_name!=''">group_name,</if>
+        <if test=" market != null and market !=''">market,</if>
+        </trim>
+    )VALUES(
+    <trim suffixOverrides=",">
+    <if test=" group_name != null and group_name!=''">#{group_name},</if>
+    <if test=" market != null and market !=''">#{market},</if>
+    </trim>
+    )
+    </insert>
+    
+  
+</mapper>

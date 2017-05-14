@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.crane.answer.clazzmanage.dao.ClazzDao" >
+    <resultMap id="BaseResultMap" type="com.crane.answer.clazzmanage.model.Clazz" >
+        <id column="class_id" property="class_id" jdbcType="VARCHAR" />
+        <result column="class_name" property="class_name" jdbcType="VARCHAR" />
+        <result column="class_open_time" property="class_open_time" jdbcType="DATE" />
+        <result column="class_stage" property="class_stage" jdbcType="VARCHAR" />
+        <result column="class_property" property="class_property" jdbcType="VARCHAR" />
+        <result column="class_people" property="class_people" jdbcType="INTEGER" />
+        <result column="class_teacher" property="class_teacher" jdbcType="VARCHAR" /> 
+    </resultMap>
+    <sql id="class_manage_columns" >
+        class_id, class_name, class_open_time, class_stage, class_property, class_people, 
+        class_teacher
+    </sql>
+    
+    <select id="list" resultMap="BaseResultMap" parameterType="com.crane.commons.model.Pager">
+    SELECT
+        <include refid="class_manage_columns" />,
+        sc.student_count
+    FROM
+        class_manage cm
+    LEFT JOIN (
+        SELECT
+            fk_class_id,
+            COUNT(*) student_count
+        FROM
+            student_manage
+        GROUP BY
+            fk_class_id
+    ) sc ON cm.class_id = sc.fk_class_id
+        <if test="query.class_stage == null or query.class_stage =='' ">where class_stage != -1</if>
+        <if test="query.class_stage != null and query.class_stage !='' ">where class_stage = #{query.class_stage}</if>
+        <if test="query.class_name != null and query.class_name !='' ">AND class_name = #{query.class_name}</if>
+        <if test="query.answer_states == 'yes' ">AND class_answer_states != -1 </if>
+    ORDER BY
+        class_open_time 
+    DESC
+    </select>
+    
+    <select id="checkClazzName" resultType="int" parameterType="string">
+        SELECT 
+            count(*)
+        FROM 
+            class_manage
+        WHERE
+            class_stage!=-1
+        AND
+            class_name = #{ class_name }
+    </select>
+    <select id="getClazz" resultMap="BaseResultMap" parameterType="string">
+        SELECT 
+            <include refid="class_manage_columns"/>
+        FROM 
+            class_manage
+        WHERE
+            class_id = #{ class_id}
+    </select>
+    
+    <insert id="clazzAdd" parameterType="com.crane.answer.clazzmanage.model.Clazz">
+        INSERT INTO 
+            class_manage
+        <trim prefix="(" suffix=")" suffixOverrides="," >
+                class_id,
+            <if test="class_name != null" >
+                class_name,
+            </if>
+            <if test="class_open_time != null" >
+                class_open_time,
+            </if>
+                class_stage,
+            <if test="class_property != null" >
+                class_property,
+            </if>
+            <if test="class_people != null" >
+                class_people,
+            </if>
+            <if test="class_teacher != null" >
+                class_teacher,
+            </if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides="," >
+                UUID(),
+            <if test="class_name != null" >
+                #{class_name,jdbcType=VARCHAR},
+            </if>
+            <if test="class_open_time != null" >
+                #{class_open_time,jdbcType=DATE},
+            </if>
+                1,
+            <if test="class_property != null" >
+                #{class_property,jdbcType=VARCHAR},
+            </if>
+            <if test="class_people != null" >
+                #{class_people,jdbcType=INTEGER},
+            </if>
+            <if test="class_teacher != null" >
+                #{class_teacher,jdbcType=VARCHAR},
+            </if>
+        </trim>
+    </insert>
+    
+    <update id="clazzUpdate" parameterType="com.crane.answer.clazzmanage.model.Clazz">
+    UPDATE 
+        class_manage
+    SET 
+    <if test="class_stage ==null and class_stage!='' ">
+        class_name = #{class_name},
+        class_property = #{class_property},
+        class_teacher = #{class_teacher}
+    </if>
+    <if test="class_stage != null and class_stage!=''">
+        class_stage = #{class_stage},
+        class_answer_states =  1
+    </if>
+    WHERE
+        class_id = #{class_id}
+    </update>
+    
+    <update id="answer_statesUpdate" >
+    UPDATE 
+        class_manage
+    SET 
+    <if test=" param2 != null ">class_answer_states = 1</if>
+    <if test=" param2 == null ">class_answer_states = -1</if>
+    WHERE
+        class_id = #{param1}
+    </update>
+    
+</mapper>

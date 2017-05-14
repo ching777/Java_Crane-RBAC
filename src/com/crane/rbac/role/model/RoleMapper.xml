@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.crane.rbac.role.dao.RoleDao">
+    <resultMap type="com.crane.rbac.role.model.Role" id="BaseResultMap">
+        <id property="role_id" javaType="java.lang.Integer" column="role_id" jdbcType="INTEGER"/>
+        <result property="role_name" javaType="java.lang.String" column="role_name" jdbcType="VARCHAR"/>
+        <result property="role_status" javaType="java.lang.Integer" column="role_status" jdbcType="INTEGER"/>
+        <result property="role_key" javaType="java.lang.String" column="role_key" jdbcType="VARCHAR"/>
+        <result property="market" javaType="java.lang.String" column="market" jdbcType="VARCHAR"/>
+    </resultMap>
+    <sql id="sys_role_columns">
+        role_id,role_name,role_status,role_key,market
+    </sql>
+    
+    <select id="load" parameterType="integer" resultMap="BaseResultMap">
+    SELECT 
+        <include refid="sys_role_columns"/>
+    FROM
+        sys_role
+    WHERE
+        role_id=#{role_id}
+    </select>
+    
+    <select id="roleList" resultMap="BaseResultMap">
+    SELECT 
+        <include refid="sys_role_columns"/>
+    FROM
+        sys_role
+    ORDER BY
+        role_id
+    </select>
+
+    <select id="valid" parameterType="string" resultType="int">
+    SELECT
+        COUNT(*)
+    FROM
+        sys_role
+    WHERE
+        role_key=#{role_key}
+    </select>
+    
+    <insert id="add" parameterType="com.crane.rbac.role.model.Role" keyProperty="role_id" useGeneratedKeys="true">
+    INSERT INTO
+        sys_role (
+    <trim suffixOverrides=",">
+    <if test="role_name != null and role_name != ''">role_name,</if>
+    <if test="role_key != null and role_key != ''">role_key,</if>
+    <if test="role_status != null and role_status != ''">role_status,</if>
+    <if test="market != null and market != ''">market,</if>
+    </trim>
+    )VALUES(
+    <trim suffixOverrides=",">
+    <if test="role_name != null and role_name != ''">#{role_name},</if>
+    <if test="role_key != null and role_key != ''">#{role_key},</if>
+    <if test="role_status != null and role_status != ''">#{role_status},</if>
+    <if test="market != null and market != ''">#{market},</if>
+    </trim>
+    )
+    </insert>
+    
+    
+    <update id="role_update" parameterType="com.crane.rbac.role.model.Role">
+    UPDATE 
+        sys_role
+    <set>
+        <if test="role_name != null and role_name != ''">role_name=#{role_name},</if>
+        <if test="role_key != null and role_key != ''">role_key=#{role_key},</if>
+        <if test="role_status != null and role_status != ''">role_status=#{role_status},</if>
+        <if test="market != null and market != ''">market=#{market},</if>
+    </set>
+    WHERE
+        role_id=#{role_id}
+    </update>
+    
+    <delete id="delete" parameterType="int">
+    DELETE FROM role_mapping_resource where fk_role_id=#{role_id};
+    UPDATE sys_user SET fk_role_id = null WHERE fk_role_id=#{role_id};
+    DELETE FROM sys_role WHERE role_id=#{role_id};
+    
+    </delete>
+
+</mapper>

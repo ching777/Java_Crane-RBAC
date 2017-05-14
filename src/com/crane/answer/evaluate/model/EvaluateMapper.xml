@@ -1,0 +1,176 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.crane.answer.evaluate.dao.EvaluateDao" >
+    <resultMap id="BaseResultMap" type="com.crane.answer.evaluate.model.Evaluate" >
+        <id column="evaluate_id" property="evaluate_id" jdbcType="VARCHAR" />
+        <result column="evaluate_student_id" property="evaluate_student_id" jdbcType="VARCHAR" />
+        <result column="evaluate_answer_id" property="evaluate_answer_id" jdbcType="VARCHAR" />
+        <result column="evaluate_info" property="evaluate_info" jdbcType="VARCHAR" />
+    </resultMap>
+    <resultMap type="com.crane.answer.evaluate.model.EvaluateList" id="allEvaluateList"/>
+    
+    
+    <sql id="answer_student_evaluate_columns" >
+        evaluate_id, evaluate_student_id, evaluate_answer_id, evaluate_info
+    </sql>
+    
+    <resultMap type="com.crane.answer.evaluate.model.Evaluate" id="evaluate_student_class_time" extends="BaseResultMap">
+        <association property="clazz" javaType="com.crane.answer.clazzmanage.model.Clazz" resultMap="com.crane.answer.clazzmanage.dao.ClazzDao.BaseResultMap"/>
+        <association property="time" javaType="com.crane.answer.timemanage.model.Time" resultMap="com.crane.answer.timemanage.dao.TimeDao.BaseResultMap"></association>
+        <association property="student" javaType="com.crane.answer.studentmanage.model.Student" resultMap="com.crane.answer.studentmanage.dao.StudentDao.BaseResultMap"></association>
+    </resultMap>
+    
+    <select id="getEvaluateList" resultMap="allEvaluateList">
+        SELECT
+        answer_student_evaluate.evaluate_info,
+        student_manage.student_name,
+        class_manage.class_name,
+        answer_time_manage.answer_question,
+        answer_student_evaluate.evaluate_id,
+        class_manage.class_stage
+        FROM
+        answer_student_evaluate
+        LEFT JOIN student_manage ON answer_student_evaluate.evaluate_student_id = student_manage.student_id
+        LEFT JOIN class_manage ON student_manage.fk_class_id = class_manage.class_id
+        LEFT JOIN answer_time_manage ON answer_student_evaluate.evaluate_answer_id = answer_time_manage.answer_id
+    </select>
+    
+    <select id="getClass_name" resultMap="allEvaluateList">
+       SELECT
+            class_manage.class_name
+        FROM
+            answer_time_manage
+        INNER JOIN class_manage ON answer_time_manage.fk_class_id = class_manage.class_id
+        WHERE
+            answer_states != '完毕'
+    </select>
+    
+    <select id="getStudentName" resultMap="allEvaluateList" parameterType="java.lang.String" >
+        SELECT
+            student_manage.student_name,
+            answer_time_manage.answer_question,
+            class_manage.class_name,
+            student_manage.student_id,
+            answer_time_manage.answer_id
+        FROM
+            class_manage
+        LEFT JOIN student_manage ON student_manage.fk_class_id = class_manage.class_id
+        LEFT JOIN answer_time_manage ON answer_time_manage.fk_class_id = class_manage.class_id
+        WHERE
+            class_name = #{class_name}
+            group by student_name
+    </select>
+    
+    <insert id="evaluateAdd" parameterType="com.crane.answer.evaluate.model.Evaluate">
+        insert into answer_student_evaluate
+        <trim prefix="(" suffix=")" suffixOverrides="," >
+            evaluate_id,
+            <if test="evaluate_student_id != null" >
+                evaluate_student_id,
+            </if>
+            <if test="evaluate_answer_id != null" >
+                evaluate_answer_id,
+            </if>
+            <if test="evaluate_info != null" >
+                evaluate_info,
+            </if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides="," >
+            UUID(),
+            <if test="evaluate_student_id != null" >
+                #{evaluate_student_id,jdbcType=VARCHAR},
+            </if>
+            <if test="evaluate_answer_id != null" >
+                #{evaluate_answer_id,jdbcType=VARCHAR},
+            </if>
+            <if test="evaluate_info != null" >
+                #{evaluate_info,jdbcType=VARCHAR},
+            </if>
+        </trim>
+    </insert>
+    
+    <select id="checkEvaluate" resultType="int" parameterType="java.lang.String">
+        select 
+            count(*)
+        from answer_student_evaluate
+        where evaluate_student_id = #{evaluate_student_id,jdbcType=VARCHAR}
+    </select>
+    
+    <select id="getOneEvaluate" resultMap="BaseResultMap" parameterType="java.lang.String">
+        select 
+            <include refid="answer_student_evaluate_columns"/>
+        from answer_student_evaluate
+        where evaluate_id = #{evaluate_id,jdbcType=VARCHAR}
+    </select>
+    
+    <update id="evaluateUpdate" parameterType="com.crane.answer.evaluate.model.Evaluate" >
+        update answer_student_evaluate
+        <set >
+                evaluate_info = #{evaluate_info,jdbcType=VARCHAR},
+        </set>
+        where evaluate_id = #{evaluate_id,jdbcType=VARCHAR}
+    </update>
+    
+    <delete id="evaluateDel" parameterType="java.lang.String" >
+        delete from answer_student_evaluate
+        where evaluate_id = #{evaluate_id,jdbcType=VARCHAR}
+    </delete>
+  <!--   
+    <select id="load" resultMap="BaseResultMap" parameterType="java.lang.String" >
+        select 
+        <include refid="answer_student_evaluate_columns" />
+        from answer_student_evaluate
+        where evaluate_id = #{evaluate_id,jdbcType=VARCHAR}
+    </select>
+    <delete id="delete" parameterType="java.lang.String" >
+        delete from answer_student_evaluate
+        where evaluate_id = #{evaluate_id,jdbcType=VARCHAR}
+    </delete>
+    <insert id="add" parameterType="com.shxt.student.model.Evaluate" >
+        insert into answer_student_evaluate
+        <trim prefix="(" suffix=")" suffixOverrides="," >
+            <if test="evaluate_id != null" >
+                evaluate_id,
+            </if>
+            <if test="evaluate_student_id != null" >
+                evaluate_student_id,
+            </if>
+            <if test="evaluate_answer_id != null" >
+                evaluate_answer_id,
+            </if>
+            <if test="evaluate_info != null" >
+                evaluate_info,
+            </if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides="," >
+            <if test="evaluate_id != null" >
+                #{evaluate_id,jdbcType=VARCHAR},
+            </if>
+            <if test="evaluate_student_id != null" >
+                #{evaluate_student_id,jdbcType=VARCHAR},
+            </if>
+            <if test="evaluate_answer_id != null" >
+                #{evaluate_answer_id,jdbcType=VARCHAR},
+            </if>
+            <if test="evaluate_info != null" >
+                #{evaluate_info,jdbcType=VARCHAR},
+            </if>
+        </trim>
+    </insert>
+    <update id="update" parameterType="com.shxt.student.model.Evaluate" >
+        update answer_student_evaluate
+        <set >
+            <if test="evaluate_student_id != null" >
+                evaluate_student_id = #{evaluate_student_id,jdbcType=VARCHAR},
+            </if>
+            <if test="evaluate_answer_id != null" >
+                evaluate_answer_id = #{evaluate_answer_id,jdbcType=VARCHAR},
+            </if>
+            <if test="evaluate_info != null" >
+                evaluate_info = #{evaluate_info,jdbcType=VARCHAR},
+            </if>
+        </set>
+        where evaluate_id = #{evaluate_id,jdbcType=VARCHAR}
+    </update>
+     -->
+</mapper>

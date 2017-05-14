@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:mvc="http://www.springframework.org/schema/mvc"
+    xmlns:context="http://www.springframework.org/schema/context"
+    xsi:schemaLocation="http://www.springframework.org/schema/mvc http://www.springframework.org/schema/mvc/spring-mvc-4.3.xsd
+		http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+		http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-4.3.xsd"
+>
+
+    <!-- 1.启动mvc 注解 -->
+    <mvc:annotation-driven />
+    <!-- 2.扫描 -->
+    <context:component-scan base-package="com.**.web">
+        <context:include-filter type="annotation" expression="org.springframework.stereotype.Controller" />
+        <context:include-filter type="annotation" expression="org.springframework.web.bind.annotation.ControllerAdvice" />
+    </context:component-scan>
+    <!-- 3.排除静态资源 默认default-servlet-name="default" -->
+    <mvc:default-servlet-handler default-servlet-name="default" />
+    <!-- 4.JSP 默认视图解析器 -->
+    <bean id="jspResourceViewResolver" class="org.springframework.web.servlet.view.InternalResourceViewResolver">
+        <property name="prefix" value="/WEB-INF/"></property>
+        <property name="suffix" value=".jsp"></property>
+        <!-- 加入jstl支持 -->
+        <property name="viewClass" value="org.springframework.web.servlet.view.JstlView"></property>
+    </bean>
+
+    <!-- 5.配置上传 -->
+    <bean id="multipartResolver" class="org.springframework.web.multipart.commons.CommonsMultipartResolver">
+        <property name="defaultEncoding" value="UTF-8"></property>
+        <property name="maxInMemorySize" value="2048"></property>
+        <property name="maxUploadSize" value="209715200"></property>
+        <property name="resolveLazily" value="true"></property>
+    </bean>
+    <!-- 6统一异常处理 -->
+    <!-- 7默认控制器 -->
+    <mvc:view-controller path="/index" view-name="jsp/login" />
+    <!-- session 拦截器 -->
+    <mvc:interceptors>
+        <mvc:interceptor>
+            <mvc:mapping path="/sys/**" />
+            <mvc:mapping path="/nav/**" />
+            <mvc:exclude-mapping path="/sys/login" />
+            <bean class="com.crane.commons.interceptor.SessionInterceptor" />
+        </mvc:interceptor>
+    </mvc:interceptors>
+
+</beans>
